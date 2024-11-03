@@ -12,13 +12,15 @@ Save and load trained models using pickle
 
 ## Installation
 To use this project, you only need numpy. You can install it using pip:
-
+```bash
 pip install numpy
-Usage
-Example
+```
+
+### Import
+```python
 import numpy as np
 from ann import ArtificialNeuralNetwork
-
+```
 
 ## How to use
 ### Create dataset

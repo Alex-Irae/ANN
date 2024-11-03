@@ -61,83 +61,14 @@ class ArtificialNeuralNetwork:
         Returns :
         - Artificial neural network
         """
-        mode_dict = ['he','xavier',None]
-        if init_mode not in mode_dict:
-            print(f"Initialisation mode {init_mode} not recognised, please verify the parameters")
-            return
-        
-        loss_dict = ['mse','mae','cross_entropy']
-        if loss not in loss_dict:
-            print(f"Loss function {loss} not recognised, please verify the parameters")
-            return
-        
+        self.input_test(_shape,init_mode,h1,fct1,h2,fct2,h3,fct3,fout,loss)
+
+
         self.loss = loss
         self.init_mode = init_mode
         self.name = name
         self.shape = _shape
-        
-        if h1:
-            if h1 <= 0 :
-                h1 =None
-                self.h1 =False
-            else :
-                self.h1 =True
-        else:
-            self.h1 =False        
-        
-            
-        if h2:
-            if h2 <= 0 :
-                h2 = None
-                self.h1 =False
-            else :
-                self.h2 =True
-        else :
-            self.h2 = False
-            
-        if h3:
-            if h3 <= 0:
-                h3 =None  
-                self.h1 =False
-            else :
-                self.h3 =True  
-        else: 
-            self.h3 = False
-                
 
-            
-        if (not h2 and h3) or (not h1 and h2) or (not h1 and h3):
-            print("Cant define a second or third layer before defining the preceding layer")
-            return
-        
-        if _shape[0] ==None or _shape[1] == None or type(_shape[0])!=int or type(_shape[1])!=int:
-            print("Incorrect data dimensions, please verify the shape parameter")
-            return
-        
-        if (fct1!= 'relu' and fct1 != 'sigmoid' and fct1 != 'tanh' and fct1 != 'swish' and fct1!='linear') and fct1!= None:
-            print(f"Incorrect activation function {fct1}, please verify the parameters")
-            return
-        if (fct2!= 'relu' and fct2 != 'sigmoid' and fct2 != 'tanh' and fct2 != 'swish' and fct2!='linear') and fct2!= None:
-            print("Incorrect activation function, please verify the parameters")
-            return
-        if (fct3!= 'relu' and fct3 != 'sigmoid' and fct3 != 'tanh' and fct3 != 'swish' and fct3!='linear') and fct3!= None:
-            print("Incorrect activation function, please verify the parameters")
-            return
-        if (fout!= 'relu' and fout != 'sigmoid' and fout != 'tanh' and fout != 'swish' and fout!='softmax' and fout!='linear') and fout != None:
-            print("Incorrect activation function, please verify the parameters")
-            return
-        
-       
-        if h1 and not fct1:
-            print("Activation function for first layer not declared")
-            return
-        if h2 and not fct2 :
-            print("Activation function for second layer not declared")
-            return
-        if h3 and not fct3 :
-            print("Activation function for the third layer isnt declared")
-            return    
-    
         
         match fct1:
             case 'relu' : 
@@ -288,8 +219,125 @@ class ArtificialNeuralNetwork:
                 self.W_output = np.random.randn(h_last_out, output_size) *0.01
                 self.b_output = np.zeros(shape=(1, output_size))*0.01
                 
-                  
+    def input_test(self, _shape, init_mode, h1, fct1, h2, fct2, h3, fct3, fout, loss):
+        """
+        Test the input of the model
+        
+        Parameters:
+        - _shape: tuple, shape of the data (features, output)
+        - init_mode: str, method of initialisation of the weights ('xavier', 'he', None)
+        - h1: int, number of nodes in the first hidden layer
+        - fct1: str, activation function for the first hidden layer ('relu', 'sigmoid', 'tanh', 'swish')
+        - h2: int, number of nodes in the second hidden layer
+        - fct2: str, activation function for the second hidden layer ('relu', 'sigmoid', 'tanh', 'swish')
+        - h3: int, number of nodes in the third hidden layer
+        - fct3: str, activation function for the third hidden layer ('relu', 'sigmoid', 'tanh', 'swish')
+        - fout: str, output function ('relu', 'sigmoid', 'tanh', 'swish', 'softmax')
+        - loss: str, loss function ('mse', 'mae', 'cross_entropy')
+        
 
+        """
+        if h1:
+            if h1 <= 0:
+                h1 = None
+                self.h1 = False
+            else:
+                self.h1 = True
+        else:
+            self.h1 = False
+        
+        if h2:
+            if h2 <= 0:
+                h2 = None
+                self.h2 = False
+            else:
+                self.h2 = True
+        else:
+            self.h2 = False
+        
+        if h3:
+            if h3 <= 0:
+                h3 = None
+                self.h3 = False
+            else:
+                self.h3 = True
+        else:
+            self.h3 = False
+            
+        mode_dict = ['he', 'xavier', None]
+        if init_mode not in mode_dict:
+             
+            raise ValueError(f"Initialisation mode {init_mode} not recognised, please verify the parameters")
+        
+        loss_dict = ['mse', 'mae', 'cross_entropy']
+        if loss not in loss_dict:
+             
+            raise ValueError(f"Loss function {loss} not recognised, please verify the parameters")
+        
+        if (not h1 and h2) or (not h2 and h3) or (not h1 and h3):
+             
+            raise ValueError("Cannot define a second or third layer before defining the preceding layer")
+        
+        if not isinstance(_shape, (list, tuple)) or len(_shape) != 2 or not all(isinstance(dim, int) for dim in _shape):
+             
+            raise ValueError("Incorrect data dimensions, please verify the shape parameter")
+        
+        valid_activations = ['relu', 'sigmoid', 'tanh', 'swish', 'linear',None]
+        if fct1 not in valid_activations:
+             
+            raise ValueError(f"Incorrect activation function {fct1}, please verify the parameters")
+        if fct2 not in valid_activations:
+             
+            raise ValueError(f"Incorrect activation function {fct2}, please verify the parameters")
+        if fct3 not in valid_activations:
+             
+            raise ValueError(f"Incorrect activation function {fct3}, please verify the parameters")
+        
+        valid_output_activations = valid_activations + ['softmax']
+        if fout not in valid_output_activations:
+             
+            raise ValueError(f"Incorrect activation function {fout}, please verify the parameters")
+        
+        if h1 and not fct1:
+             
+            raise ValueError("Activation function for first layer not declared")
+        if h2 and not fct2:
+             
+            raise ValueError("Activation function for second layer not declared")
+        if h3 and not fct3:
+             
+            raise ValueError("Activation function for the third layer not declared")
+        if (h1 and type(h1) != int) or (h2 and type(h2) != int) or (h3 and type(h3) != int):
+             
+            raise ValueError("Number of nodes must be an integer")
+        
+    def train_input_test(self,X_train, y_train, epochs, learning_rate, batch_size):
+        """
+        Test the input of the train method
+        
+        Parameters:
+        - X_train: ndarray, training features
+        - y_train: ndarray, training labels
+        - epochs: int, number of times the training data is passed through the network
+        - learning_rate: float, rate at which the neural network adjusts its weights
+        - batch_size: int, size of each batch
+        
+        """
+        if not isinstance(X_train, np.ndarray) or not isinstance(y_train, np.ndarray):
+            raise ValueError("X_train and y_train must be numpy arrays")
+        if X_train.shape[0] != y_train.shape[0]:
+            raise ValueError("X_train and y_train must have the same number of samples")
+        if not isinstance(epochs, int) or epochs <= 0:
+            raise ValueError("Number of epochs must be a positive integer")
+        if not isinstance(learning_rate, (int, float)) or learning_rate <= 0:
+            raise ValueError("Learning rate must be a positive number")
+        if not isinstance(batch_size, int) or batch_size <= 0:
+            raise ValueError("Batch size must be a positive integer")
+        if X_train.shape != self.shape[0] or y_train.shape != self.shape[1]:
+            raise ValueError("Input and output dimensions do not match the model")
+        
+        
+        
     def summary(self):
         print()
         print(f"--------------Model : {self.name}--------------")
@@ -468,8 +516,10 @@ class ArtificialNeuralNetwork:
         - learning_rate, rate at which the neural network adjusts its weights
         - batch_size, size of each batch 
         """
+        self.train_input_test(X_train, y_train, epochs, learning_rate, batch_size)
         
         
+            
         self.learning_rate = learning_rate  
               
               
@@ -504,7 +554,8 @@ class ArtificialNeuralNetwork:
         return y_pred  
 
 
-
+    
+        
 
     def save_model(self, model_name):
         """

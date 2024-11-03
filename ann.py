@@ -333,7 +333,7 @@ class ArtificialNeuralNetwork:
             raise ValueError("Learning rate must be a positive number")
         if not isinstance(batch_size, int) or batch_size <= 0:
             raise ValueError("Batch size must be a positive integer")
-        if X_train.shape != self.shape[0] or y_train.shape != self.shape[1]:
+        if X_train.shape[1] != self.shape[0] or y_train.shape[1] != self.shape[1]:
             raise ValueError("Input and output dimensions do not match the model")
         
         
@@ -627,17 +627,25 @@ def load_model(model_name):
         
         
     
+X_train = np.array(object=[[2,850],[5,2000],[4,1500],[2,900],[3,1350],[4,1600],[1,700],[2,800],[3,1400]])
+Y_train = np.array(object=[[220],[550],[450],[250],[370],[480],[180],[210],[390]])
+
+#340
+test = np.array(object=[3,1200])
+
+print(X_train.shape[1])
+print(Y_train.shape[1])
+model = ArtificialNeuralNetwork(_shape=(X_train.shape[1],Y_train.shape[1]),h1=90,fct1='relu',h2=90,fct2='relu',fout='linear',loss ='mse',name='ann_model')
+
+model.summary()
 
 
-# model = ArtificialNeuralNetwork(_shape=(X_train.shape[1],Y_train.shape[1]),h1=90,fct1='relu',h2=90,fct2='relu',fout='linear',loss ='mse',name='ann_model')
-
-# model.summary()
-# model.train( X_train=X_train, y_train=Y_train, epochs=1000, learning_rate=0.0008, batch_size = 2)
+model.train( X_train=X_train, y_train=Y_train, epochs=1000, learning_rate=0.0008, batch_size = 2)
 
 
-# # 1
-# Y= model.predict(X=test)
-# print(Y)
+# 1
+Y= model.predict(X=test)
+print(Y)
 
 
 
@@ -645,11 +653,6 @@ def load_model(model_name):
 
 
 
-# X_train = np.array(object=[[2,850],[5,2000],[4,1500],[2,900],[3,1350],[4,1600],[1,700],[2,800],[3,1400]])
-# Y_train = np.array(object=[[220],[550],[450],[250],[370],[480],[180],[210],[390]])
-
-# #340
-# test = np.array(object=[3,1200])
 
 
 

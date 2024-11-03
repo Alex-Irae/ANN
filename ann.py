@@ -328,7 +328,7 @@ class ArtificialNeuralNetwork:
         print(f"--------------------------------------------")
         
         
-    def forward(self, X):
+    def forward(self, X,training):
         """
         Forward pass through the network
                 
@@ -343,17 +343,23 @@ class ArtificialNeuralNetwork:
             # First hidden layer 
             self.Z1 = np.dot(a=self.A_last_out, b=self.W1) + self.b1  
             self.A1 = self.fct1(x=self.Z1) 
+            if training:
+                self.A1 = self.dropout(self.A1, self.dropout_rate)
             self.A_last_out =  self.A1
         if self.h2 :
             # Second hidden layer 
             self.Z2 = np.dot(a=self.A_last_out, b=self.W2) + self.b2  
             self.A2 = self.fct2(x=self.Z2)
+            if training:
+                self.A2 = self.dropout(self.A2, self.dropout_rate)
             self.A_last_out = self.A2  
         
         if self.h3:
             # Third hidden layer
             self.Z3 = np.dot(a=self.A_last_out, b=self.W3) + self.b3 
             self.A3 = self.fct3(x=self.Z3) 
+            if training:
+                self.A3 = self.dropout(self.A3, self.dropout_rate)
             self.A_last_out = self.A3
         
         # Output layer (using softmax as defaut)
@@ -362,7 +368,24 @@ class ArtificialNeuralNetwork:
                 
         return self.A_output
 
- 
+    def dropout(self, A, rate):
+        """
+        Apply dropout to the activation matrix A.
+        
+        Parameters:
+        - A : ndarray, activation matrix
+        - rate : float, dropout rate
+
+        Returns:
+        - A_dropped: ndarray, activation matrix after applying dropout
+        """
+        keep_prob = 1 - rate
+        mask = np.random.rand(*A.shape) < keep_prob
+        A_dropped = A * mask
+        A_dropped /= keep_prob
+        return A_dropped
+    
+    
     def compute_loss(self, y_pred, y_true):
         """
         Compute the combined loss.
@@ -470,7 +493,7 @@ class ArtificialNeuralNetwork:
         
         
         
-    def train(self, X_train, y_train, epochs=1000, learning_rate=0.01, batch_size = 32, loss='mse'):
+    def train(self, X_train, y_train, epochs=1000, learning_rate=0.01, batch_size = 32, loss='mse',dropout_rate=0.0):
         """
         Training method for the neural network
         
@@ -497,7 +520,7 @@ class ArtificialNeuralNetwork:
         if loss not in loss_dict:
             raise ValueError(f"Loss function {loss} not recognised, please verify the parameters")
         
-            
+        self.dropout_rate = dropout_rate
         self.learning_rate = learning_rate  
         self.loss =loss
               
@@ -511,7 +534,7 @@ class ArtificialNeuralNetwork:
                 X_batch = X_train_shuffled[i:i + batch_size]
                 y_batch = y_train_shuffled[i:i + batch_size]
                 
-                y_pred = self.forward(X=X_batch)
+                y_pred = self.forward(X=X_batch,training=True)
                 
                 loss_val = self.compute_loss(y_pred=y_pred, y_true=y_batch)
                 
@@ -528,7 +551,7 @@ class ArtificialNeuralNetwork:
         Returns:
         - probabilities: A 2D NumPy array of shape (n_samples, n_classes) containing class probabilities.
         """
-        y_pred = self.forward(X=X)  
+        y_pred = self.forward(X=X,training=False)  
         return y_pred  
 
 
@@ -560,54 +583,12 @@ class ArtificialNeuralNetwork:
         
         Parameters:
         - model_name: str, name to use for the saved model file.
-        """
-        if not self.h1 :
-            self.W1 = 0
-            self.b1 = 0
-            self.fct1 =  None
-            self.d_fct1 = None
-            self.fct1_name = None
-            self.hidden_size_1 = 0
-        if not self.h2 :
-            self.W2 = 0
-            self.b2 = 0
-            self.fct2 =  None
-            self.d_fct2 = None
-            self.fct2_name = None
-            self.hidden_size_2 = 0
-        if not self.h3 :
-            self.W3 = 0
-            self.b3 = 0
-            self.fct3 =  None
-            self.d_fct3 = None
-            self.fct3_name = None
-            self.hidden_size_3 = 0
-        
-        model = {
-            'W1': self.W1, 'b1': self.b1,
-            'W2': self.W2, 'b2': self.b2,
-            'W3': self.W3, 'b3': self.b3,
-            'W_output': self.W_output, 'b_output': self.b_output,
-            'hidden_size_1': self.hidden_size_1,
-            'hidden_size_2': self.hidden_size_2,
-            'hidden_size_3': self.hidden_size_3,
-            'fct1': self.fct1_name,
-            'fct2': self.fct2_name,
-            'fct3': self.fct3_name,
-            'fout': self.fout_name,
-            'name': self.name,
-            'shape': self.shape,
-            'mode': self.init_mode
-        }
-        
+        """        
         models_directory = os.path.join(os.getcwd(), 'models')
-
         os.makedirs(models_directory, exist_ok=True)
-
         model_path = os.path.join(models_directory, f'{model_name}.pkl')
-        
         with open(model_path, 'wb') as f:
-            pickle.dump(model, f)
+            pickle.dump(self, f)
         
         
         
@@ -621,23 +602,10 @@ def load_model(model_name):
     Returns:
     - model: The loaded model.
     """
-    
     models_directory = os.path.join(os.getcwd(), 'models')
     model_path = os.path.join(models_directory, f'{model_name}.pkl')
-    
     with open(model_path, 'rb') as f:
-        fi = pickle.load(file=f)
-        model = ArtificialNeuralNetwork(_shape =fi['shape'] , init_mode = fi['mode'],h1=fi['hidden_size_1'], 
-                                        h2=fi['hidden_size_2'], h3=fi['hidden_size_3'], fct1=fi['fct1'], fct2=fi['fct2'],
-                                        fct3=fi['fct3'], fout=fi['fout'], name=fi['name'])
-        model.W1 = fi['W1']
-        model.W2 = fi['W2']
-        model.W3 = fi['W3']
-        model.W_output = fi['W_output']
-        model.b1 = fi['b1']
-        model.b2 = fi['b2']
-        model.b3 = fi['b3']
-        model.b_output = fi['b_output']
+        model= pickle.load(f)
     return model  
 
         
@@ -650,11 +618,11 @@ def load_model(model_name):
 
 
     
-# X_train = np.array(object=[[2,850],[5,2000],[4,1500],[2,900],[3,1350],[4,1600],[1,700],[2,800],[3,1400]])
-# Y_train = np.array(object=[[220],[550],[450],[250],[370],[480],[180],[210],[390]])
+X_train = np.array(object=[[2,850],[5,2000],[4,1500],[2,900],[3,1350],[4,1600],[1,700],[2,800],[3,1400]])
+Y_train = np.array(object=[[220],[550],[450],[250],[370],[480],[180],[210],[390]])
 
-# #340
-# test = np.array(object=[3,1200])
+#340
+test = np.array(object=[3,1200])
 
 
 
@@ -691,19 +659,19 @@ def load_model(model_name):
 # [0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
 
 
-# Y_train = np.array(object=[[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],
-#                            [0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],
-#                            [0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1]])
+# Y_train = np.array(object=[[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,0,0],
+#                            [0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],
+#                            [0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1]])
 
 # #[1,0,0]
 # test = np.array(object=[[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                        #  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
+#                          0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
 
 
 
-# model = ArtificialNeuralNetwork(_shape=(X_train.shape[1],Y_train.shape[1]),h1=90,fct1='relu',h2=90,fct2='relu',fout='linear',name='ann_model')
+model = ArtificialNeuralNetwork(_shape=(X_train.shape[1],Y_train.shape[1]),h1=90,fct1='relu',h2=90,fct2='relu',fout='linear',name='ann_model')
 
-# model.summary()
+model.summary()
 
 # model.add_layer(h=90,fct='sigmoid')
 # model.summary()
@@ -713,9 +681,9 @@ def load_model(model_name):
 
 
 # model.add_layer(h=90,fct='relu')
-# model.train( X_train=X_train, y_train=Y_train, epochs=1000, learning_rate=0.0008, batch_size = 2)
+model.train( X_train=X_train, y_train=Y_train, epochs=1000, learning_rate=0.001, batch_size = 2,loss='mse')
 
+# model.save(model_name="mumodel")
 
-# # 1
-# Y= model.predict(X=test)
-# print(Y)
+Y= model.predict(X=test)
+print(Y)

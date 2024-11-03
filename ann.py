@@ -41,7 +41,7 @@ def linear_derivative(x):
 
 
 class ArtificialNeuralNetwork:
-    def __init__(self,_shape:tuple=None,init_mode:str = None,h1:int=None,fct1:str =None,h2:int=None,fct2:str =None,h3:int=None,fct3:str =None, fout:str ='softmax', loss:str='mse', name:str = 'ann_model'):
+    def __init__(self,_shape:tuple=None,init_mode:str = None,h1:int=None,fct1:str =None,h2:int=None,fct2:str =None,h3:int=None,fct3:str =None, fout:str ='softmax', name:str = 'ann_model'):
         """
         Initialise the neural Network
         
@@ -55,10 +55,9 @@ class ArtificialNeuralNetwork:
         - h3, Number of nodes in the third layer (if not defined, no hidden layer)
         - fct3, activation function for the third layer  ('sigmoid','relu', 'tanh','swish')
         - fout, output function (if None, softmax)  ('sigmoid','relu', 'tanh','swish','softmax')
-        - loss, loss function ('mse','mae','cross_entropy')
         - name, name of the ANN for saving/loading
         
-        Returns :
+        Instantiate:
         - Artificial neural network
         """
         if h1:
@@ -93,10 +92,7 @@ class ArtificialNeuralNetwork:
              
             raise ValueError(f"Initialisation mode {init_mode} not recognised, please verify the parameters")
         
-        loss_dict = ['mse', 'mae', 'cross_entropy']
-        if loss not in loss_dict:
-             
-            raise ValueError(f"Loss function {loss} not recognised, please verify the parameters")
+
         
         if (not h1 and h2) or (not h2 and h3) or (not h1 and h3):
              
@@ -123,20 +119,23 @@ class ArtificialNeuralNetwork:
                 raise ValueError("Number of nodes must be a positive integer")
 
 
-        self.loss = loss
+
         self.init_mode = init_mode
         self.name = name
         self.shape = _shape
 
         if fct1 :
             self.fct1, self.d_fct1 = self.att_fcts(fct1)
-            
+            self.fct1_name = fct1   
         if fct2 :
             self.fct2, self.d_fct2 = self.att_fcts(fct2) 
+            self.fct2_name = fct2
         if fct3 :
             self.fct3, self.d_fct3 = self.att_fcts(fct3)
+            self.fct3_name = fct3
         if fout :
             self.fout,_ = self.att_fcts(fout)
+            self.fout_name = fout
         
         
         
@@ -295,22 +294,20 @@ class ArtificialNeuralNetwork:
         print()
         print(f"--------------Model : {self.name}--------------")
         print()
-        print(f"  Loss:       {self.loss}")
-        print()
         print(f"  Weight and bias initalisation mode:       {self.init_mode}")
         print()
         print(f"  Input  :       {self.shape[0]}")
         print()
         if self.h1:
-            print(f"  Layer 1  :       activation function: {self.fct1}\n                   number of nodes: {self.hidden_size_1}")
+            print(f"  Layer 1  :       activation function: {self.fct1_name}\n                   number of nodes: {self.hidden_size_1}")
             print()
         if self.h2:
-            print(f"  Layer 2  :       activation function: {self.fct2}\n                   number of nodes: {self.hidden_size_2}")
+            print(f"  Layer 2  :       activation function: {self.fct2_name}\n                   number of nodes: {self.hidden_size_2}")
             print()
         if self.h3:
-            print(f"  Layer 3 :        activation function: {self.fct3}\n                   number of nodes: {self.hidden_size_3}")
+            print(f"  Layer 3 :        activation function: {self.fct3_name}\n                   number of nodes: {self.hidden_size_3}")
             print()
-        print(f"  Output :       activation function {self.fout}")
+        print(f"  Output :       activation function {self.fout_name}")
         print()
         print(f"  Output size :       {self.shape[1]}")
         print()
@@ -377,7 +374,8 @@ class ArtificialNeuralNetwork:
                 mse_loss = np.mean(np.square(y_pred - y_true))
                 return mse_loss
             case 'mae':
-                return np.mean(np.abs(y_pred - y_true))
+                mae_loss = np.mean(np.abs(y_pred - y_true))
+                return mae_loss
 
             
     def backward(self, X, y_true, y_pred):
@@ -458,7 +456,7 @@ class ArtificialNeuralNetwork:
         
         
         
-    def train(self, X_train, y_train, epochs=1000, learning_rate=0.01, batch_size = 32):
+    def train(self, X_train, y_train, epochs=1000, learning_rate=0.01, batch_size = 32, loss='mse'):
         """
         Training method for the neural network
         
@@ -481,10 +479,13 @@ class ArtificialNeuralNetwork:
             raise ValueError("Batch size must be a positive integer")
         if X_train.shape[1] != self.shape[0] or y_train.shape[1] != self.shape[1]:
             raise ValueError("Input and output dimensions do not match the model")
+        loss_dict = ['mse', 'mae', 'cross_entropy']
+        if loss not in loss_dict:
+            raise ValueError(f"Loss function {loss} not recognised, please verify the parameters")
         
             
         self.learning_rate = learning_rate  
-              
+        self.loss =loss
               
         for epoch in range(epochs):
         
@@ -498,12 +499,12 @@ class ArtificialNeuralNetwork:
                 
                 y_pred = self.forward(X=X_batch)
                 
-                loss = self.compute_loss(y_pred=y_pred, y_true=y_batch)
+                loss_val = self.compute_loss(y_pred=y_pred, y_true=y_batch)
                 
                 self.backward(X=X_batch, y_true=y_batch, y_pred=y_pred)
 
             if epoch % 50 == 0: 
-                print(f'Epoch {epoch}, Loss: {loss}')
+                print(f'Epoch {epoch}, Loss: {loss_val}')
         
         
 
@@ -517,16 +518,56 @@ class ArtificialNeuralNetwork:
         return y_pred  
 
 
-    
         
+    def fct_updt(self,layer:int,fct:str):
+        """
+        Update the activation function of a layer
+        
+        Parameters:
+        - layer, int, layer number (0 for output layer)
+        - fct, str, activation function ('relu', 'sigmoid', 'tanh', 'swish')
+        """
+        if fct not in ['relu', 'sigmoid', 'tanh', 'swish']:
+            raise ValueError(f"Incorrect activation function {fct}, please verify the parameters")
+        if layer == 1 and self.h1 ==True:
+            self.fct1,self.d_fct1 = self.att_fcts(fct)
+        elif layer == 2  and self.h1 ==True:
+            self.fct2,self.d_fct2 =self.att_fcts(fct)
+        elif layer == 3  and self.h1 ==True:
+            self.fct3,self.d_fct3 = self.att_fcts(fct)
+        elif layer ==0:
+            self.fout,_ = self.att_fcts(fct)
+        else:
+            raise ValueError("Error with the layer to update, please verify the parameters")
 
-    def save_model(self, model_name):
+    def save(self, model_name):
         """
         Saves the trained model to a file using pickle.
         
         Parameters:
         - model_name: str, name to use for the saved model file.
         """
+        if not self.h1 :
+            self.W1 = 0
+            self.b1 = 0
+            self.fct1 =  None
+            self.d_fct1 = None
+            self.fct1_name = None
+            self.hidden_size_1 = 0
+        if not self.h2 :
+            self.W2 = 0
+            self.b2 = 0
+            self.fct2 =  None
+            self.d_fct2 = None
+            self.fct2_name = None
+            self.hidden_size_2 = 0
+        if not self.h3 :
+            self.W3 = 0
+            self.b3 = 0
+            self.fct3 =  None
+            self.d_fct3 = None
+            self.fct3_name = None
+            self.hidden_size_3 = 0
         
         model = {
             'W1': self.W1, 'b1': self.b1,
@@ -536,14 +577,13 @@ class ArtificialNeuralNetwork:
             'hidden_size_1': self.hidden_size_1,
             'hidden_size_2': self.hidden_size_2,
             'hidden_size_3': self.hidden_size_3,
-            'fct1': self.fct1,
-            'fct2': self.fct2,
-            'fct3': self.fct3,
-            'fout': self.fout,
-            'loss': self.loss,
+            'fct1': self.fct1_name,
+            'fct2': self.fct2_name,
+            'fct3': self.fct3_name,
+            'fout': self.fout_name,
             'name': self.name,
-            'input_size': self.W1.shape[0],
-            'output_size': self.W_output.shape[1],
+            'shape': self.shape,
+            'mode': self.init_mode
         }
         
         models_directory = os.path.join(os.getcwd(), 'models')
@@ -573,10 +613,9 @@ def load_model(model_name):
     
     with open(model_path, 'rb') as f:
         fi = pickle.load(file=f)
-        model = ArtificialNeuralNetwork(inp=fi['input_size'], out=fi['output_size'],
-                                        h1=fi['hidden_size_1'], h2=fi['hidden_size_2'], h3=fi['hidden_size_3'],
-                                        fct1=fi['fct1'], fct2=fi['fct2'], fct3=fi['fct3'], fout=fi['fout'],
-                                        loss=fi['loss'], name=fi['name'])
+        model = ArtificialNeuralNetwork(_shape =fi['shape'] , init_mode = fi['mode'],h1=fi['hidden_size_1'], 
+                                        h2=fi['hidden_size_2'], h3=fi['hidden_size_3'], fct1=fi['fct1'], fct2=fi['fct2'],
+                                        fct3=fi['fct3'], fout=fi['fout'], name=fi['name'])
         model.W1 = fi['W1']
         model.W2 = fi['W2']
         model.W3 = fi['W3']
@@ -589,42 +628,20 @@ def load_model(model_name):
 
         
         
+model = ArtificialNeuralNetwork(_shape=(2,1),init_mode='he',h1=3,fct1='relu',h2=3,fct2='relu',fout='sigmoid',name='ann_model')
+model.summary()
+model.save('ann_model')
+model = load_model('ann_model')
+model.summary()
+# small sets of data for example
+
+
     
-X_train = np.array(object=[[2,850],[5,2000],[4,1500],[2,900],[3,1350],[4,1600],[1,700],[2,800],[3,1400]])
-Y_train = np.array(object=[[220],[550],[450],[250],[370],[480],[180],[210],[390]])
+# X_train = np.array(object=[[2,850],[5,2000],[4,1500],[2,900],[3,1350],[4,1600],[1,700],[2,800],[3,1400]])
+# Y_train = np.array(object=[[220],[550],[450],[250],[370],[480],[180],[210],[390]])
 
-#340
-test = np.array(object=[3,1200])
-
-
-model = ArtificialNeuralNetwork(_shape=(X_train.shape[1],Y_train.shape[1]),h1=90,fct1='relu',h2=90,fct2='relu',fout='linear',loss ='mse',name='ann_model')
-
-model.summary()
-
-model.add_layer(h=90,fct='sigmoid')
-model.summary()
-
-model.remove_layer()
-model.summary()
-
-
-# model.add_layer(h=90,fct='relu')
-# model.train( X_train=X_train, y_train=Y_train, epochs=1000, learning_rate=0.0008, batch_size = 2)
-
-
-# # 1
-# Y= model.predict(X=test)
-# print(Y)
-
-
-
-
-
-
-
-
-
-
+# #340
+# test = np.array(object=[3,1200])
 
 
 
@@ -665,6 +682,27 @@ model.summary()
 #                            [0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],
 #                            [0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1]])
 
-# [1,0,0]
+# #[1,0,0]
 # test = np.array(object=[[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                         #  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
+
+
+
+# model = ArtificialNeuralNetwork(_shape=(X_train.shape[1],Y_train.shape[1]),h1=90,fct1='relu',h2=90,fct2='relu',fout='linear',name='ann_model')
+
+# model.summary()
+
+# model.add_layer(h=90,fct='sigmoid')
+# model.summary()
+
+# model.remove_layer()
+# model.summary()
+
+
+# model.add_layer(h=90,fct='relu')
+# model.train( X_train=X_train, y_train=Y_train, epochs=1000, learning_rate=0.0008, batch_size = 2)
+
+
+# # 1
+# Y= model.predict(X=test)
+# print(Y)

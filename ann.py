@@ -219,7 +219,13 @@ class ArtificialNeuralNetwork:
         
     def att_fcts(self,fct):
         """
-        return the functiona ssociated to the strong
+        Associated the string to the corresponding function
+        
+        Parameters:
+        - fct: str, activation function ('relu', 'sigmoid', 'tanh', 'swish')
+        
+        Returns:
+        - function, derivative of the function
         """
         valid_activations = ['relu', 'sigmoid', 'tanh', 'swish', 'linear','softmax']
         if fct not in valid_activations:
@@ -232,9 +238,12 @@ class ArtificialNeuralNetwork:
             case 'linear' : return linear,linear_derivative
             case 'softmax' : return softmax,None
             
+            
+            
     def remove_layer(self):
         """
         Remove the last hidden layer
+        
         """
         if self.h3:
             self.W3 = None
@@ -250,6 +259,8 @@ class ArtificialNeuralNetwork:
             self.h1 = False
         else:
             raise ValueError("Cannot remove a hidden layer if there is none")
+        
+        
         
     def add_layer(self, h:int, fct:str):
         """
@@ -291,6 +302,9 @@ class ArtificialNeuralNetwork:
     
         
     def summary(self):
+        """
+        Display a summary of the neural network
+        """
         print()
         print(f"--------------Model : {self.name}--------------")
         print()
@@ -628,11 +642,10 @@ def load_model(model_name):
 
         
         
-model = ArtificialNeuralNetwork(_shape=(2,1),init_mode='he',h1=3,fct1='relu',h2=3,fct2='relu',fout='sigmoid',name='ann_model')
-model.summary()
-model.save('ann_model')
-model = load_model('ann_model')
-model.summary()
+## Example of use
+
+
+
 # small sets of data for example
 
 

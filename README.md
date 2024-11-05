@@ -5,6 +5,7 @@ This project is an Artificial Neural Network (ANN) built from scratch using nump
 Customizable layers (up to 3 hidden layers)
 Various activation functions (ReLU, Sigmoid, Tanh, Swish, Softmax)
 Supports different initialization methods (He, Xavier)
+L2 regularization
 Different loss function for different problems
 Train and predict capabilities
 Modifiable learning rates and batch sizes

@@ -468,7 +468,7 @@ class ArtificialNeuralNetwork:
             
             dW2 = 1 / m * np.dot(a=np.asarray(a=self.A1).T, b=dZ2)  
             if self.regularization == 'l2':
-                dW2 += self._lambda/m) * self.W2
+                dW2 += (self._lambda/m) * self.W2
             else :  
                 dW2 += self._lambda * np.sign(self.W2)
             db2 = 1 / m * np.sum(a=np.asarray(a=dZ2), axis=0, keepdims=True) 

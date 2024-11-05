@@ -450,7 +450,7 @@ class ArtificialNeuralNetwork:
             dZ3 = np.multiply(dA3, self.d_fct3(np.asarray(a=self.Z3)))  
             dW3 = 1 / m * np.dot(a=np.asarray(a=self.A2).T, b=dZ3)  
             if self.regularization == 'l2':
-                dW3 += (2/self._lambda) * self.W3
+                dW3 += (self._lambda/m) * self.W3
             else :  
                 dW3 += self._lambda * np.sign(self.W3)
             db3 = 1 / m * np.sum(a=np.asarray(a=dZ3), axis=0, keepdims=True) 
@@ -468,7 +468,7 @@ class ArtificialNeuralNetwork:
             
             dW2 = 1 / m * np.dot(a=np.asarray(a=self.A1).T, b=dZ2)  
             if self.regularization == 'l2':
-                dW2 += (2/self._lambda) * self.W2
+                dW2 += self._lambda/m) * self.W2
             else :  
                 dW2 += self._lambda * np.sign(self.W2)
             db2 = 1 / m * np.sum(a=np.asarray(a=dZ2), axis=0, keepdims=True) 
@@ -485,7 +485,7 @@ class ArtificialNeuralNetwork:
             dZ1 = np.multiply(dA1,self.d_fct1(np.asarray(a=self.Z1)))  
             dW1 = 1 / m * np.dot(a=np.asarray(a=X).T, b=dZ1)  
             if self.regularization == 'l2':
-                dW1 += (2/self._lambda) * self.W1
+                dW1 += (self._lambda/m) * self.W1
             else :  
                 dW1 += self._lambda * np.sign(self.W1)
             db1 = 1 / m * np.sum(a=np.asarray(a=dZ1), axis=0, keepdims=True)  

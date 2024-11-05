@@ -449,6 +449,7 @@ class ArtificialNeuralNetwork:
 
             dZ3 = np.multiply(dA3, self.d_fct3(np.asarray(a=self.Z3)))  
             dW3 = 1 / m * np.dot(a=np.asarray(a=self.A2).T, b=dZ3)  
+            dW3 += (2/self._lambda) * self.W3
             db3 = 1 / m * np.sum(a=np.asarray(a=dZ3), axis=0, keepdims=True) 
             dZ_last_out = dZ3
             
@@ -461,7 +462,9 @@ class ArtificialNeuralNetwork:
                 dA2 = np.dot(a=dZ_last_out, b=np.asarray(a=self.W_output).T)  
                 assert dA2.shape == np.asarray(a=self.A2).shape, f"Shape mismatch: {dA2.shape} vs {self.A2.shape}"
             dZ2 = np.multiply(dA2 ,self.d_fct2(np.asarray(a=self.Z2)))  
+            
             dW2 = 1 / m * np.dot(a=np.asarray(a=self.A1).T, b=dZ2)  
+            dW2 += (2/self._lambda) * self.W2
             db2 = 1 / m * np.sum(a=np.asarray(a=dZ2), axis=0, keepdims=True) 
             dZ_last_out = dZ2
         
@@ -475,6 +478,7 @@ class ArtificialNeuralNetwork:
                 assert dA1.shape == np.asarray(a=self.A1).shape, f"Shape mismatch: {dA1.shape} vs {self.A1.shape}"
             dZ1 = np.multiply(dA1,self.d_fct1(np.asarray(a=self.Z1)))  
             dW1 = 1 / m * np.dot(a=np.asarray(a=X).T, b=dZ1)  
+            dW1 += (2/self._lambda) * self.W1
             db1 = 1 / m * np.sum(a=np.asarray(a=dZ1), axis=0, keepdims=True)  
             dZ_last_out = dZ1
   
@@ -493,7 +497,7 @@ class ArtificialNeuralNetwork:
         
         
         
-    def train(self, X_train, y_train, epochs=1000, learning_rate=0.01, batch_size = 32, loss='mse',dropout_rate=0.0):
+    def train(self, X_train, y_train, epochs=1000, learning_rate=0.01, batch_size = 32, loss='mse',dropout_rate=0.0,_lambda = 0):
         """
         Training method for the neural network
         
@@ -523,7 +527,7 @@ class ArtificialNeuralNetwork:
         self.dropout_rate = dropout_rate
         self.learning_rate = learning_rate  
         self.loss =loss
-              
+        self._lambda = _lambda
         for epoch in range(epochs):
         
             indices = np.random.permutation(X_train.shape[0])
@@ -681,7 +685,7 @@ model.summary()
 
 
 # model.add_layer(h=90,fct='relu')
-model.train( X_train=X_train, y_train=Y_train, epochs=1000, learning_rate=0.001, batch_size = 2,loss='mse')
+model.train( X_train=X_train, y_train=Y_train, epochs=1000, learning_rate=0.001, batch_size = 2,loss='mse',_lambda =1)
 
 # model.save(model_name="mumodel")
 
